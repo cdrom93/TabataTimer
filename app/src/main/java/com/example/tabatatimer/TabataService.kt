@@ -95,6 +95,9 @@ class TabataService : Service() {
         val maxVolume = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
         am.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0)
         
+        // Start foreground with full screen intent immediately
+        startForeground(1, createNotification("Préparation..."))
+        
         runNextPhase(TimerState.PREPARE)
     }
 
@@ -255,18 +258,21 @@ class TabataService : Service() {
 
     private fun createNotification(content: String): Notification {
         val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
-        return NotificationCompat.Builder(this, "tabata_channel")
+        val builder = NotificationCompat.Builder(this, "tabata_channel")
             .setContentTitle("Chronomètre Tabata")
             .setContentText(content)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true) // Forcer l'affichage sur écran de verrouillage
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
+
+        return builder.build()
     }
 
     private fun updateNotification(content: String) {

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,10 +59,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Garder l'écran allumé pendant l'utilisation de l'appli
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Configuration pour afficher l'appli sur l'écran de verrouillage
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -150,7 +150,7 @@ fun FinishedScreen(onDone: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFD700)) // Or / Jaune
+            .background(Color(0xFFFFD700))
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -200,6 +200,9 @@ fun ConfigScreen(
     onConfigChange: (TabataConfig) -> Unit,
     onStart: () -> Unit
 ) {
+    var showAboutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Scaffold(
         bottomBar = {
             Surface(tonalElevation = 8.dp) {
@@ -226,12 +229,21 @@ fun ConfigScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text(
-                "Configuration",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF536694)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Configuration",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color(0xFF536694)
+                )
+                IconButton(onClick = { showAboutDialog = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "À propos", tint = Color(0xFF536694))
+                }
+            }
 
             TimeConfigRow("Préparation", config.prepare, Icons.AutoMirrored.Filled.DirectionsRun) { onConfigChange(config.copy(prepare = it)) }
             TimeConfigRow("Travail", config.work, Icons.Default.FitnessCenter) { onConfigChange(config.copy(work = it)) }
@@ -252,6 +264,37 @@ fun ConfigScreen(
             
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text("À propos") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Cette application est open-source et gratuite.", textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/cdrom93/TabataTimer"))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF24292E)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Source, contentDescription = null, tint = Color.White)
+                        Spacer(Modifier.width(12.dp))
+                        Text("PROJET GITHUB", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAboutDialog = false }) {
+                    Text("Fermer")
+                }
+            }
+        )
     }
 }
 
@@ -293,7 +336,6 @@ fun CycleConfigRow(value: Int, isInfinite: Boolean, onValueChange: (Int) -> Unit
         
         Spacer(Modifier.width(12.dp))
         
-        // Dark circular infinity button
         Surface(
             onClick = { onInfiniteChange(!isInfinite) },
             shape = CircleShape,

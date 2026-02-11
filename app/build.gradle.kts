@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tabatatimer"
+    namespace = "com.cdrom93.tabatatimer"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.tabatatimer"
+        applicationId = "com.cdrom93.tabatatimer"
         minSdk = 23
         targetSdk = 36
         versionCode = 1
